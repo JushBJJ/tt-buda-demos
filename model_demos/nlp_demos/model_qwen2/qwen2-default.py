@@ -59,7 +59,7 @@ def run_qwen_causal_lm(max_length=512, top_p=0.9, top_k=50, temperature=0.7):
     output = text_generator(
         prompt,
         truncation=True,
-        do_sample=True
+        do_sample=True,
         num_beams=2,
         num_return_sequences=1,
         pad_token_id=tokenizer.pad_token_id,
