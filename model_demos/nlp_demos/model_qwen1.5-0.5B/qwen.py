@@ -2,7 +2,7 @@ import torch
 from transformers import Qwen2ForCausalLM, Qwen2Tokenizer
 
 # Use GPU if available, else CPU
-device = "cuda"
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Load the model and tokenizer
 model = Qwen2ForCausalLM.from_pretrained(
@@ -18,7 +18,7 @@ def generate_text(prompt, num_tokens=512, top_p=0.9, top_k=50, temperature=0.7):
 
     generated_ids = model.generate(
         input_ids,
-        attention_mask=attention_mask,  # Pass the attention mask
+        attention_mask=attention_mask,
         max_new_tokens=num_tokens,
         do_sample=True,
         top_p=top_p,
