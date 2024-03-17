@@ -1,0 +1,5 @@
+transformers
+torch
+auto-gptq
+accelerate
+optimum
