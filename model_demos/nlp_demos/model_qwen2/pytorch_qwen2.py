@@ -1,9 +1,8 @@
-import os
-import pybuda
+import torch
+from transformers import Qwen2ForCausalLM, Qwen2Tokenizer, Qwen2Config, pipeline
 
-from pybuda._C.backend_api import BackendDevice
-from pybuda.transformers.pipeline import pipeline as pybuda_pipeline
-from transformers import Qwen2ForCausalLM, Qwen2Tokenizer, Qwen2Config
+# Use GPU if available, else CPU
+device = "cuda" if torch.cuda.is_available() else "cpu"  # TODO Remove on PR
 
 """
 === Models ===
@@ -15,17 +14,10 @@ Qwen/Qwen1.5-0.5B-Chat-GPTQ-Int8
 Qwen/Qwen1.5-0.5B-Chat-AWQ
 """
 
-model_name = "Qwen/Qwen1.5-0.5B"
+model_name = "Qwen/Qwen1.5-0.5B-Chat"
 
 
 def run_qwen_causal_lm(max_length=512, top_p=0.9, top_k=50, temperature=0.7):
-    # Set PyBuda configurations
-    compiler_cfg = pybuda.config._get_global_compiler_config()
-    compiler_cfg.default_df_override = pybuda._C.DataFormat.Float16_b
-    os.environ["TT_BACKEND_OVERLAY_MAX_EXTRA_BLOB_SIZE"] = "65536"
-
-    # TODO Test on tonsterrent device
-
     # Config
     config = Qwen2Config.from_pretrained(model_name)
     config_dict = config.to_dict()
@@ -36,9 +28,10 @@ def run_qwen_causal_lm(max_length=512, top_p=0.9, top_k=50, temperature=0.7):
 
     # Load the model and tokenizer
     model = Qwen2ForCausalLM.from_pretrained(
-        model_name, config=config)
-    tokenizer = Qwen2Tokenizer.from_pretrained(model_name)
+        model_name, config=config, device_map=device)
+    tokenizer = Qwen2Tokenizer.from_pretrained(model_name, device_map=device)
 
+    # Set pad token
     tokenizer.pad_token = tokenizer.eos_token
 
     # Example usage
@@ -55,7 +48,7 @@ def run_qwen_causal_lm(max_length=512, top_p=0.9, top_k=50, temperature=0.7):
     )
 
     # Initialize pipeline
-    text_generator = pybuda_pipeline(
+    text_generator = pipeline(
         "text-generation",
         model=model,
         tokenizer=tokenizer,
@@ -77,7 +70,7 @@ def run_qwen_causal_lm(max_length=512, top_p=0.9, top_k=50, temperature=0.7):
     )
 
     # Display output
-    print("\n\nOUTPUT:\n\n", output[0]["generated_text"])
+    print("\nOUTPUT:\n\n", output[0]["generated_text"])
 
 
 if __name__ == "__main__":
